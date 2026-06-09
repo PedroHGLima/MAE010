@@ -40,8 +40,8 @@ jobs:
 
       - name: Install zip
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends zip
+          apt-get update
+          apt-get install -y --no-install-recommends zip
 
       - name: Generate zip
         shell: bash
