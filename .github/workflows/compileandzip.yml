@@ -1,0 +1,54 @@
+name: Compile and Zip
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install MPI toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends openmpi-bin libopenmpi-dev
+
+      - name: Compile available Makefiles
+        shell: bash
+        run: |
+          shopt -s nullglob
+          for makefile in ex*/Makefile; do
+            dir="$(dirname "$makefile")"
+            echo "Compilando $dir"
+            make -C "$dir"
+          done
+
+  package:
+    needs: build
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/xu-cheng/texlive-full:latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install zip
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends zip
+
+      - name: Generate zip
+        shell: bash
+        run: |
+          bash ./pack.sh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: T1_Lima_Pedro
+          path: T1_Lima_Pedro.zip
