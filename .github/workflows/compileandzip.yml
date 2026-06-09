@@ -15,8 +15,8 @@ jobs:
 
       - name: Install build dependencies
         run: |
-          apt-get update
-          apt-get install -y --no-install-recommends make openmpi-bin libopenmpi-dev
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends make openmpi-bin libopenmpi-dev
 
       - name: Compile available Makefiles
         shell: bash
@@ -40,8 +40,8 @@ jobs:
 
       - name: Install zip
         run: |
-          apt-get update
-          apt-get install -y --no-install-recommends zip
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends zip
 
       - name: Generate zip
         shell: bash
