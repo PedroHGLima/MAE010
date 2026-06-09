@@ -1,3 +1,15 @@
+# Executáveis gerados pelos exercícios
+hello_os
+hello_ring
+mpi_trap_generalized
+mpi_psum
+hello_gather
+minmax
+mpi_vecadd_gather
+mpi_vecadd_allgather
+student_struct
+student_three_bcasts
+
 # Prerequisites
 *.d
 
