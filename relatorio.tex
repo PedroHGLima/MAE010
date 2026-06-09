@@ -1,0 +1,37 @@
+% \documentclass[a4paper, 12pt]{article}
+\documentclass[a4paper, 12pt]{report}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[brazilian]{babel}
+\usepackage{graphicx}
+\usepackage{float}
+
+\title{\textbf{Computação de Alto Desempenho}\\Trabalho 1}
+\author{
+Pedro Henrique Grave Lima - 120019143
+}
+\date{\today}
+
+\begin{document}
+\maketitle
+\newpage
+
+\section{Introdução}
+Um único `relatorio.pdf` na raiz do arquivo compactado, contendo:
+
+\begin{itemize}
+    \item Uma capa curta (nome, DRE, data).
+    \item Para cada exercício: uma descrição breve da sua abordagem, os comandos usados para compilar e executar, a saída, e qualquer discussão pedida pelo enunciado.
+    \item Para o Ex. 1(a): a observação das execuções múltiplas (PIDs distintos, coluna de CPU mudando).
+    \item Para o Ex. 2(a): a saída de verificação com $p = 3, n = 10$.
+    \item Para o Ex. 2(b): a tabela de $T_p$, $S_p$, $E_p$ e a discussão de quando $E_p$ cai abaixo de 0.8.
+    \item Para o Ex. 2(c) (se feito): o gráfico log–log de convergência com a inclinação medida.
+    \item Para o Ex. 3: o erro relativo contra a soma serial e uma comparação de contagens de linhas com a versão da Aula 6 usando coletivas.
+    \item Para o Ex. 5: a discussão de quando Allgather é preferível a Gather.
+    \item Para o Ex. 6: a comparação entre a versão com tipo derivado e a versão com três Bcasts.
+\end{itemize}
+
+LaTeX puro, Markdown convertido para PDF, ou qualquer ferramenta que produza um PDF limpo é aceito. Gráficos feitos à mão \textbf{não} são aceitos; use matplotlib, gnuplot, ou equivalente.
+
+\end{document}
