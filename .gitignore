@@ -10,6 +10,10 @@ mpi_vecadd_allgather
 student_struct
 student_three_bcasts
 
+# Arquivos do projeto
+relatorio.pdf
+*.zip
+
 # Prerequisites
 *.d
 
