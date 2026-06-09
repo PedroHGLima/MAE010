@@ -36,7 +36,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build LaTeX document
-        uses: latex-actions/latex-action@v2
+        uses: xu-cheng/latex-action@v2
         with:
           root_file: relatorio.tex
 
