@@ -1,6 +1,6 @@
+#include <mpi.h>
 #include <stdio.h>
 #include <string.h>
-#include <mpi.h>
 
 #define MAX_STRING 150
 
@@ -20,21 +20,24 @@ int main(int argc, char *argv[])
     int src = (my_rank - 1 + comm_sz) % comm_sz;
 
     MPI_Sendrecv(my_greeting, strlen(my_greeting) + 1, MPI_CHAR, dest, 0,
-                 recv_greeting, MAX_STRING, MPI_CHAR, src, 0,
-                 MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                 recv_greeting, MAX_STRING, MPI_CHAR, src, 0, MPI_COMM_WORLD,
+                 MPI_STATUS_IGNORE);
 
     if (my_rank == 0)
     {
         printf("Rank 0 recebeu no anel: %s\n", recv_greeting);
 
         char buffer[MAX_STRING];
-        for (int q = 1; q < comm_sz; q++) {
-            MPI_Recv(buffer, MAX_STRING, MPI_CHAR, q, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        for (int q = 1; q < comm_sz; q++)
+        {
+            MPI_Recv(buffer, MAX_STRING, MPI_CHAR, q, 1, MPI_COMM_WORLD,
+                     MPI_STATUS_IGNORE);
             printf("%s\n", buffer);
         }
     }
     else
-        MPI_Send(recv_greeting, strlen(recv_greeting) + 1, MPI_CHAR, 0, 1, MPI_COMM_WORLD);
+        MPI_Send(recv_greeting, strlen(recv_greeting) + 1, MPI_CHAR, 0, 1,
+                 MPI_COMM_WORLD);
 
     MPI_Finalize();
     return 0;
