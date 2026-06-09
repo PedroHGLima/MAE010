@@ -3,6 +3,7 @@ name: Compile and Zip
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
 jobs:
   build:
@@ -12,10 +13,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install MPI toolchain
+      - name: Install build dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends openmpi-bin libopenmpi-dev
+          apt-get update
+          apt-get install -y --no-install-recommends make openmpi-bin libopenmpi-dev
 
       - name: Compile available Makefiles
         shell: bash
@@ -31,7 +32,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/xu-cheng/texlive-full:latest
+      image: texlive/texlive:latest
 
     steps:
       - name: Checkout
