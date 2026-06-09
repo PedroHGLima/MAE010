@@ -1,10 +1,11 @@
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <mpi.h>
-#include <unistd.h>   // getpid()
-#include <sched.h>    // sched_getcpu()
+#include <unistd.h>
+#include <sched.h>
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[])
+{
     int comm_sz, my_rank;
 
     MPI_Init(&argc, &argv);
@@ -14,7 +15,7 @@ int main(int argc, char* argv[]) {
     pid_t pid = getpid();
     int cpu = sched_getcpu();
 
-    printf("Hello from rank %d/%d -- PID = %d, CPU = %d\n", 
+    printf("Hello from rank %d/%d -- PID = %d, CPU = %d\n",
            my_rank, comm_sz, pid, cpu);
 
     MPI_Finalize();

@@ -4,7 +4,8 @@
 
 #define MAX_STRING 150
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[])
+{
     int comm_sz, my_rank;
     char my_greeting[MAX_STRING];
     char recv_greeting[MAX_STRING];
@@ -16,7 +17,7 @@ int main(int argc, char* argv[]) {
     snprintf(my_greeting, MAX_STRING, "Greetings from rank %d!", my_rank);
 
     int dest = (my_rank + 1) % comm_sz;
-    int src  = (my_rank - 1 + comm_sz) % comm_sz;
+    int src = (my_rank - 1 + comm_sz) % comm_sz;
 
     MPI_Sendrecv(my_greeting, strlen(my_greeting) + 1, MPI_CHAR, dest, 0,
                  recv_greeting, MAX_STRING, MPI_CHAR, src, 0,
