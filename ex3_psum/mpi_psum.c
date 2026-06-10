@@ -34,26 +34,18 @@ int main(int argc, char *argv[])
         }
 
         for (int i = 0; i < local_n; i++)
-        {
             local_vector[i] = global_vector[i];
-        }
 
         for (int dest = 1; dest < comm_sz; dest++)
-        {
             MPI_Send(&global_vector[dest * local_n], local_n, MPI_DOUBLE, dest,
                      0, MPI_COMM_WORLD);
-        }
     }
     else
-    {
         MPI_Recv(local_vector, local_n, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD,
                  MPI_STATUS_IGNORE);
-    }
 
     for (int i = 0; i < local_n; i++)
-    {
         local_sum += local_vector[i];
-    }
 
     if (my_rank == 0)
     {
