@@ -42,7 +42,7 @@ Neste trabalho, os códigos serão executados no ambiente WSL2 em um computador 
 Ambos os códigos deste exercício foram desenvolvidos com foco em observar os identificadores de processos (PIDs) e como o MPI se comporta.
 
 \subsection{Introspecção em nível de SO}
-Na sua forma mais simples, vemos como o MPI dispara um processo único para cada thread solicitada. Neste caso pediremos 8 threads, argumento passado ao MPI em \verb|MPI_Init(&argc, &argv);|. Com isso, o programa abre 8 processos diferentes, cada um com seu próprio PID e alocado a uma thread de acordo com a disponibilidade naquele instante. Como existem diversos processos executando a todo momento, o núcleo onde o cada PID será executado pode ser considerado aleatório.
+O modelo de programação do MPI funciona disparando processos independentes no sistema operacional. Nesta seção, verificou-se como esses processos são alocados no hardware ao executar o programa com 8 processos através do comando \verb|mpiexec -n 8 ./hello_os|. Diferente de um modelo de threads que compartilham memória, o MPI cria processos isolados, o que é confirmado na saída do terminal, pois cada rank possui um Identificador de Processo (\textit{PID}) próprio.
 
 \begin{lstlisting}[language=Bash, caption=Exemplo de uma execução do programa]
     $ mpiexec -n 8 ./hello_os
@@ -56,10 +56,20 @@ Na sua forma mais simples, vemos como o MPI dispara um processo único para cada
     Hello from rank 0/8 -- PID = 6570, CPU = 4
 \end{lstlisting}
 
-Após executar diversas vezes, é possível observar que o PID cresce linearmente, conforme novos processos são abertos identificadores são criados individualmente.
+Ao realizar execuções consecutivas, notou-se que os PIDs são gerados de forma sequencial (de 6570 a 6577). Isso acontece porque o MPI cria os processos um logo após o outro rapidamente. Também observou-se que a coluna da CPU muda a cada execução e não segue a ordem dos ranks. Como a alocação é feita com base no instante em que o processo é lançado e o sistema operacional gerencia muitas tarefas ao mesmo tempo, podemos considerar a distribuição dos processos nos núcleos do processador sendo aleatória.
 
 \subsection{Variante em anel}
+Nesta variante, os processos foram organizados para se comunicar em uma estrutura de anel, onde cada rank envia sua saudação para o vizinho da direita e recebe do vizinho da esquerda. No cálculo para descobrir o vizinho da esquerda do rank 0, é feito \verb|(my_rank - 1 + comm_sz) % comm_sz|. A soma do número total de processos antes de aplicar o operador de resto (\verb|%|) serve para garantir que o resultado dentro do parêntese seja positivo, já que em C o operador de resto mantém o sinal do dividendo e retornaria um índice negativo inválido (\verb|-1|).
 
+\begin{lstlisting}[language=Bash, caption=Exemplo de execução do programa em anel]
+    $ mpiexec -n 4 ./hello_ring
+    Rank 0 received: Greetings from rank 3!
+    Greetings from rank 0!
+    Greetings from rank 1!
+    Greetings from rank 2!
+\end{lstlisting}
+
+Uma implementação simples onde todos os processos tentam receber uma mensagem antes de enviar causaria um \textit{deadlock}, pois todos ficariam esperando uma ação que nunca aconteceria. Para evitar esse problema, optou-se pelo uso da função \verb|MPI_Sendrecv|. Essa primitiva do MPI resolve o impasse realizando o envio e a recepção de dados ao mesmo tempo de forma coordenada. Assim, todos os processos recebem a mensagem do anel com sucesso. No fim do código, o rank 0 recebe via \verb|MPI_Recv| as mensagens que os demais processos encaminharam para centralizar a exibição dos resultados na tela.
 
 
 \end{document}
