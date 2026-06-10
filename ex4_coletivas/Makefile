@@ -10,7 +10,9 @@ all: $(TARGETS)
 	$(CC) $(CFLAGS) -o $@ $< $(LIBS)
 
 run: all
+	@echo "=== Rodando 4(a) (hello_gather) ==="
 	mpiexec -n 4 ./hello_gather
+	@echo "\n=== Rodando 4(b) (minmax) ==="
 	mpiexec -n 4 ./minmax
 
 clean:
