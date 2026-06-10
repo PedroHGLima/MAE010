@@ -12,8 +12,8 @@ int main(void)
     double *local_vector = NULL;
 
     double local_min, local_max;
-    double global_min, global_max;
-    double serial_min, serial_max;
+    double global_min = 0., global_max = 0.;
+    double serial_min = 0., serial_max = 0.;
 
     MPI_Init(NULL, NULL);
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
@@ -61,15 +61,15 @@ int main(void)
 
     if (my_rank == 0)
     {
-        printf("Mínimo Global (MPI): %.15e | Serial: %.15e\n", global_min,
+        printf("Global Minimum (MPI): %.15e | Serial: %.15e\n", global_min,
                serial_min);
-        printf("Máximo Global (MPI): %.15e | Serial: %.15e\n", global_max,
+        printf("Global Maximum (MPI): %.15e | Serial: %.15e\n", global_max,
                serial_max);
 
         if (global_min == serial_min && global_max == serial_max)
-            printf("Verificação de limites: SUCESSO\n");
+            printf("Bounds verification: success\n");
         else
-            printf("Verificação de limites: FALHA\n");
+            printf("Bounds verification: failure\n");
         free(global_vector);
     }
 

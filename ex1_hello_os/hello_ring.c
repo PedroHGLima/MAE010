@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
 
     if (my_rank == 0)
     {
-        printf("Rank 0 recebeu no anel: %s\n", recv_greeting);
+        printf("Rank 0 received: %s\n", recv_greeting);
 
         char buffer[MAX_STRING];
         for (int q = 1; q < comm_sz; q++)

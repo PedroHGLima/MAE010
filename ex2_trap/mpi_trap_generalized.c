@@ -91,7 +91,7 @@ int main(void)
     {
         printf("With n = %d trapezoids, integral of f on [%g, %g] = %.15e\n", n,
                a, b, total_integral);
-        printf("T_p (p=%d): %e segundos\n", comm_sz, elapsed);
+        printf("T_p (p=%d): %e seconds\n", comm_sz, elapsed);
     }
 
     MPI_Finalize();

@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
         for (int i = 0; i < N; i++)
         {
             global_vector[i] = (double)rand() / RAND_MAX;
-            serial_sum += global_vector[i]; // Soma serial de referência
+            serial_sum += global_vector[i];
         }
 
         for (int i = 0; i < local_n; i++)
@@ -68,9 +68,9 @@ int main(int argc, char *argv[])
 
         double rel_error = fabs(total_sum - serial_sum) / serial_sum;
 
-        printf("Soma Paralela = %.15e\n", total_sum);
-        printf("Soma Serial   = %.15e\n", serial_sum);
-        printf("Erro Relativo = %.15e\n", rel_error);
+        printf("Parallel Sum = %.15e\n", total_sum);
+        printf("Serial Sum   = %.15e\n", serial_sum);
+        printf("Relative Error = %.15e\n", rel_error);
 
         free(global_vector);
     }
