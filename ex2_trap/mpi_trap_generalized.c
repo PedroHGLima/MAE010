@@ -89,9 +89,9 @@ int main(void)
 
     if (my_rank == 0)
     {
-        printf("With n = %d trapezoids, integral of f on [%g, %g] = %.15e\n", n,
+        printf("With n = %d, integral of f on [%g, %g] = %.5f\n", n,
                a, b, total_integral);
-        printf("T_p (p=%d): %e seconds\n", comm_sz, elapsed);
+        printf("T_p (p=%d): %.5e seconds\n", comm_sz, elapsed);
     }
 
     MPI_Finalize();
