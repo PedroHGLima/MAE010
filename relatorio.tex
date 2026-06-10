@@ -6,6 +6,8 @@
 \usepackage[brazilian]{babel}
 \usepackage{graphicx}
 \usepackage{float}
+\usepackage{hyperref}
+\usepackage{listings}
 
 \title{\textbf{Computação de Alto Desempenho}\\Trabalho 1\\\vspace{10cm}}
 \author{
@@ -34,6 +36,30 @@ Um único `relatorio.pdf` na raiz do arquivo compactado, contendo:
 
 LaTeX puro, Markdown convertido para PDF, ou qualquer ferramenta que produza um PDF limpo é aceito. Gráficos feitos à mão \textbf{não} são aceitos; use matplotlib, gnuplot, ou equivalente.
 
+Neste trabalho, os códigos serão executados no ambiente WSL2 em um computador equipado com um processador \href{https://www.intel.com.br/content/www/br/pt/products/sku/236789/intel-core-i7-processor-14700kf-33m-cache-up-to-5-60-ghz/specifications.html}{Intel Core i7 14700KF}, que conta com um total de 28 threads.
+
 \section{Exercício 1: Variantes do Hello World}
+Ambos os códigos deste exercício foram desenvolvidos com foco em observar os identificadores de processos (PIDs) e como o MPI se comporta.
+
+\subsection{Introspecção em nível de SO}
+Na sua forma mais simples, vemos como o MPI dispara um processo único para cada thread solicitada. Neste caso pediremos 8 threads, argumento passado ao MPI em \verb|MPI_Init(&argc, &argv);|. Com isso, o programa abre 8 processos diferentes, cada um com seu próprio PID e alocado a uma thread de acordo com a disponibilidade naquele instante. Como existem diversos processos executando a todo momento, o núcleo onde o cada PID será executado pode ser considerado aleatório.
+
+\begin{lstlisting}[language=Bash, caption=Exemplo de uma execução do programa]
+    $ mpiexec -n 8 ./hello_os
+    Hello from rank 1/8 -- PID = 6571, CPU = 8
+    Hello from rank 2/8 -- PID = 6572, CPU = 1
+    Hello from rank 3/8 -- PID = 6573, CPU = 14
+    Hello from rank 4/8 -- PID = 6574, CPU = 12
+    Hello from rank 5/8 -- PID = 6575, CPU = 4
+    Hello from rank 7/8 -- PID = 6577, CPU = 2
+    Hello from rank 6/8 -- PID = 6576, CPU = 0
+    Hello from rank 0/8 -- PID = 6570, CPU = 4
+\end{lstlisting}
+
+Após executar diversas vezes, é possível observar que o PID cresce linearmente, conforme novos processos são abertos identificadores são criados individualmente.
+
+\subsection{Variante em anel}
+
+
 
 \end{document}
