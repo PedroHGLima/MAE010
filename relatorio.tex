@@ -8,6 +8,7 @@
 \usepackage{float}
 \usepackage{hyperref}
 \usepackage{listings}
+\usepackage[top=3cm, bottom=2cm, left=3cm, right=2cm]{geometry} % Margens
 
 \title{\textbf{Computação de Alto Desempenho}\\Trabalho 1\\\vspace{10cm}}
 \author{
@@ -94,27 +95,38 @@ A partir dos dados coletados, observa-se que a eficiência cai abaixo de 0.8 a p
 Neste item, o número de processos foi fixado em $p = 4$ para avaliar o comportamento da aproximação da integral com o aumento do número de trapézios, utilizando $n \in \{64, 256, 1024, 4096, 16384\}$ e limite superior em $\pi = 3.1415$.
 
 \begin{lstlisting}[language=bash, caption={Resultados de convergência com p = 4}, basicstyle=\ttfamily\footnotesize]
-    With n = 64, integral of f on [0, 3.1415] = 1.99960
-    T_p (p=4): 1.43930e-05 seconds
-    With n = 256, integral of f on [0, 3.1415] = 1.99997
-    T_p (p=4): 1.76110e-05 seconds
-    With n = 1024, integral of f on [0, 3.1415] = 2.00000
-    T_p (p=4): 1.44280e-05 seconds
-    With n = 4096, integral of f on [0, 3.1415] = 2.00000
-    T_p (p=4): 1.65040e-05 seconds
-    With n = 16384, integral of f on [0, 3.1415] = 2.00000
-    T_p (p=4): 3.22390e-05 seconds
+    With n = 64, on [0, 3.1415] = 1.999598408038247
+    T_p (p=4): 1.79960e-05 seconds
+    With n = 256, on [0, 3.1415] = 1.999974897423256
+    T_p (p=4): 1.66120e-05 seconds
+    With n = 1024, on [0, 3.1415] = 1.999998427068573
+    T_p (p=4): 1.66160e-05 seconds
+    With n = 4096, on [0, 3.1415] = 1.999999897667729
+    T_p (p=4): 1.44670e-05 seconds
+    With n = 16384, on [0, 3.1415] = 1.999999989580159
+    T_p (p=4): 3.36630e-05 seconds
 \end{lstlisting}
 
-Com o aumento de $n$, o tamanho do espaçamento $h$ diminui, reduzindo o erro do método numérico. Os resultados mostram que a aproximação converge para o valor esperado de 2.00000 a partir de $n = 1024$. 
+Com o aumento de $n$, o tamanho do espaçamento $h$ diminui, reduzindo o erro do método numérico. Os resultados mostram que a aproximação converge para o valor esperado de 2.00000 em 5 casas decimais a partir de $n = 1024$.
 
 Observa-se também que o tempo de execução medido não é estritamente crescente em relação a $n$. Como esses tamanhos de problema são muito pequenos, o custo puramente computacional é insignificante. A variação de tempo observada reflete predominantemente o atraso das mensagens de comunicação do MPI (\textit{overhead}) e as flutuações do escalonador do sistema operacional, que ofuscam o tempo de cálculo da integral.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.9\textwidth]{imagens/mpi_trap_chart.pdf}
-    \caption{Gráficos de convergência e tempo de execução}
+    \includegraphics[width=0.6\textwidth]{imagens/mpi_trap_chart.pdf}
+    \caption{Gráfico de convergência}
     \label{fig:convergencia}
 \end{figure}
+
+\section{Exercício 3: Soma Paralela}
+O processo 0 gerou um vetor de 12000 números aleatórios e distribuiu fatias iguais para cada rank via \verb|MPI_Send|. Cada processo recebeu os dados com \verb|MPI_Recv|, calculou uma soma local e retornou o valor parcial para o processo 0 realizar o acúmulo final. A validação contra o cálculo serial apresentou um erro relativo de $3.33 \times 10^{-15}$, causado pela reordenação das adições na aritmética de ponto flutuante.
+
+\begin{lstlisting}[language=bash, caption={Saída da soma paralela}, basicstyle=\ttfamily\footnotesize]
+    Parallel Sum = 6.005344909739839e+03
+    Serial Sum   = 6.005344909739819e+03
+    Relative Error = 3.331845837289520e-15
+\end{lstlisting}
+
+A implementação ponto-a-ponto utilizou cerca de 15 linhas de código para o controle manual dos laços de envio e recebimento de mensagens. Com o uso de comunicações coletivas, esse bloco é substituído por apenas duas chamadas: \verb|MPI_Scatter| e \verb|MPI_Reduce|.
 
 \end{document}
