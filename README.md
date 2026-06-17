@@ -20,6 +20,9 @@ Cada diretório possui um `Makefile` configurado com regras genéricas. Para com
 # Compilar
 make
 
+# Compilar e rodar
+make run
+
 # Limpar binários e objetos
 make clean
 ```
