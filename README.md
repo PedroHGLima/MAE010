@@ -26,3 +26,7 @@ make run
 # Limpar binários e objetos
 make clean
 ```
+
+## Zipagem e entrega
+
+O script `pack.sh` veririfica todos os arquivos C, compila `relatorio.tex` e cria um .zip pronto para ser entregue.
