@@ -61,15 +61,13 @@ int main(void)
 
     if (my_rank == 0)
     {
-        printf("Global Minimum (MPI): %.15e | Serial: %.15e\n", global_min,
+        printf("Global Minimum (MPI): %.5e | Serial: %.5e\n", global_min,
                serial_min);
-        printf("Global Maximum (MPI): %.15e | Serial: %.15e\n", global_max,
+        printf("Global Maximum (MPI): %.5e | Serial: %.5e\n", global_max,
                serial_max);
 
-        if (global_min == serial_min && global_max == serial_max)
-            printf("Bounds verification: success\n");
-        else
-            printf("Bounds verification: failure\n");
+        char ok = (global_min == serial_min && global_max == serial_max) ? 1 : 0;
+        printf("Check: %s\n", ok ? "Success" : "Failure");
         free(global_vector);
     }
 
