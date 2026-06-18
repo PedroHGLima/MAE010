@@ -23,7 +23,7 @@ Pedro Henrique Grave Lima - 120019143
 \section*{Introdução}
 Este relatório apresenta o desenvolvimento e a análise de seis exercícios práticos utilizando a biblioteca MPI para programação paralela. O objetivo do trabalho é aplicar conceitos de comunicação ponto-a-ponto, algoritmos de redução, comunicações coletivas e tipos de dados derivados, avaliando o comportamento dos processos no sistema operacional e o desempenho computacional em termos de escalabilidade e convergência.
 
-Neste trabalho, os códigos serão executados no ambiente WSL2 em um computador equipado com um processador \href{https://www.intel.com.br/content/www/br/pt/products/sku/236789/intel-core-i7-processor-14700kf-33m-cache-up-to-5-60-ghz/specifications.html}{Intel Core i7 14700KF}, que conta com um total de 28 threads.
+Neste trabalho, os códigos serão executados no ambiente WSL2 em um computador equipado com um processador \href{https://www.intel.com.br/content/www/br/pt/products/sku/236789/intel-core-i7-processor-14700kf-33m-cache-up-to-5-60-ghz/specifications.html}{Intel Core i7 14700KF}, com um total de 28 threads.
 
 \section{Exercício 1: Variantes do Hello World}
 Ambos os códigos deste exercício foram desenvolvidos com foco em observar os identificadores de processos (PIDs) e como o MPI se comporta.
@@ -82,7 +82,7 @@ Os tempos de execução ($T_p$), os valores de speedup ($S_p = T_s / T_p$) e a e
 \begin{tabular}{cccc}
 \hline
 Processos ($p$) & Tempo $T_p$ ($ms$) & Speedup $S_p$ & Eficiência $E_p$ \\ \hline
-1 ($T_s$)       & 39.56              & 1.00          & 1.00             \\
+1 ($T_s$)       & 39.56              & -             & -                \\
 2               & 23.87              & 1.66          & 0.83             \\
 4               & 13.43              & 2.95          & 0.74             \\
 8               & 7.06               & 5.60          & 0.70             \\ \hline
@@ -113,8 +113,9 @@ Observa-se também que o tempo de execução medido não é estritamente crescen
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.6\textwidth]{imagens/mpi_trap_chart.pdf}
-    \caption{Gráfico de convergência}
+    \hspace{-.09\textwidth}
+    \includegraphics[width=0.7\textwidth]{imagens/mpi_trap_chart.pdf}
+    \caption{Erro de integração em função do passo h}
     \label{fig:convergencia}
 \end{figure}
 
@@ -128,5 +129,59 @@ O processo 0 gerou um vetor de 12000 números aleatórios e distribuiu fatias ig
 \end{lstlisting}
 
 A implementação ponto-a-ponto utilizou cerca de 15 linhas de código para o controle manual dos laços de envio e recebimento de mensagens. Com o uso de comunicações coletivas, esse bloco é substituído por apenas duas chamadas: \verb|MPI_Scatter| e \verb|MPI_Reduce|.
+
+\section{Exercício 4: Prática de Comunicação Coletiva}
+
+No primeiro item, usamos a função \verb|MPI_Gather| para agrupar as saudações de todos os processos em um \textit{buffer} alocado no processo 0, substituindo o laço de recepções manuais. A operação coletiva organiza as de forma sequencial de acordo com o rank de origem.
+
+\begin{lstlisting}[language=bash, caption={Saída do hello\_gather}, basicstyle=\ttfamily\footnotesize]
+    Greetings from process 0 of 4!
+    Greetings from process 1 of 4!
+    Greetings from process 2 of 4!
+    Greetings from process 3 of 4!
+\end{lstlisting}
+
+No segundo item, a distribuição de um vetor com 12000 números do tipo \verb|double| foi feita através do comando \verb|MPI_Scatter|. Cada processo realizou a busca do menor e do maior elemento local e, por fim, enviou esses dados para o processo 0 por meio de duas chamadas da função \verb|MPI_Reduce|, parametrizadas com as operações \verb|MPI_MIN| e \verb|MPI_MAX|. Os valores obtidos foram comparados com uma busca sequencial e a validação confirmou os limites globais.
+
+\begin{lstlisting}[language=bash, caption={Saída do minmax}, basicstyle=\ttfamily\footnotesize]
+    Global Minimum (MPI): 8.12784e-05 | Serial: 8.12784e-05
+    Global Maximum (MPI): 9.99998e-01 | Serial: 9.99998e-01
+    Check: Success
+\end{lstlisting}
+
+\section{Exercício 5: Soma Paralela de Vetores}
+Os vetores $x$ e $y$ foram distribuídos entre os processos utilizando a função \verb|MPI_Scatter|, permitindo que cada rank realizasse a soma local do seu bloco correspondente ($z = x + y$). Na primeira versão, o vetor resultante $z$ foi coletado apenas no processo 0 por meio da função \verb|MPI_Gather|, que validou o resultado contra o cálculo sequencial. Na segunda versão, a operação foi substituída por \verb|MPI_Allgather|, fazendo com que todos os processos terminassem a execução com o vetor $z$ completo em memória, o que é verificado pelo valor impresso da última posição do vetor ($full\_z[N-1] = 35997.0$) em todos os ranks.
+
+\begin{lstlisting}[language=bash, caption={Saída da soma paralela de vetores}, basicstyle=\ttfamily\footnotesize]
+    $ mpiexec -n 4 ./mpi_vecadd_gather
+    Check gather: Success
+
+    $ mpiexec -n 4 ./mpi_vecadd_allgather
+    Rank 0 over. full_z[N-1] = 35997.0
+    Rank 1 over. full_z[N-1] = 35997.0
+    Rank 2 over. full_z[N-1] = 35997.0
+    Rank 3 over. full_z[N-1] = 35997.0
+\end{lstlisting}
+
+A versão com \verb|MPI_Allgather| é útil em algoritmos iterativos onde todos os processos necessitam do resultado completo da etapa atual para realizar os cálculos da próxima iteração, como em métodos numéricos para sistemas lineares ou simulações de N-corpos. O uso do \verb|MPI_Allgather| nessas situações é preferível pois elimina a necessidade de realizar uma chamada subsequente de \verb|MPI_Bcast| pelo processo raiz, reduzindo as etapas de sincronização e a latência da comunicação.
+
+\section{Exercício 6: Um Tipo de Dado Derivado MPI}
+Para transmitir uma estrutura (\verb|struct Student|), é criado um tipo derivado MPI utilizando a primitiva \verb|MPI_Type_create_struct| e a macro \verb|offsetof|. Na primeira versão, o processo 0 realizou a difusão dos dados com uma única chamada \verb|MPI_Bcast|. Na segunda versão, o envio foi dividido em três chamadas independentes de \verb|MPI_Bcast|, uma para cada campo da estrutura. Ambas as abordagens entregaram um conteúdo final idêntico em todos os processos.
+
+\begin{lstlisting}[language=bash, caption={Saída do tipo derivado e das três chamadas}, basicstyle=\ttfamily\footnotesize]
+    $ mpiexec -n 4 ./student_struct
+    Rank 0 received: Alice, Grade: 9.5, ID: 12345
+    Rank 1 received: Alice, Grade: 9.5, ID: 12345
+    Rank 2 received: Alice, Grade: 9.5, ID: 12345
+    Rank 3 received: Alice, Grade: 9.5, ID: 12345
+
+    $ mpiexec -n 4 ./student_three_bcasts
+    Rank 1 received: Alice, Grade: 9.5, ID: 12345
+    Rank 2 received: Alice, Grade: 9.5, ID: 12345
+    Rank 3 received: Alice, Grade: 9.5, ID: 12345
+    Rank 0 received: Alice, Grade: 9.5, ID: 12345
+\end{lstlisting}
+
+A comparação mostra que a versão com tipo derivado reduz o número de chamadas da biblioteca de três para uma. Em termos de desempenho, essa abordagem reduz o tempo de CPU gasto com o custo de invocação das funções do MPI e permite que os dados sejam lidos e copiados em um bloco contíguo de memória, diminuindo o overhead de processamento quando comparado à execução de transmissões isoladas para cada variável.
 
 \end{document}
