@@ -26,10 +26,8 @@ Este relatório apresenta o desenvolvimento e a análise de seis exercícios pr�
 Neste trabalho, os códigos serão executados no ambiente WSL2 em um computador equipado com um processador \href{https://www.intel.com.br/content/www/br/pt/products/sku/236789/intel-core-i7-processor-14700kf-33m-cache-up-to-5-60-ghz/specifications.html}{Intel Core i7 14700KF}, com um total de 28 threads.
 
 \section{Exercício 1: Variantes do Hello World}
-Ambos os códigos deste exercício foram desenvolvidos com foco em observar os identificadores de processos (PIDs) e como o MPI se comporta.
 
-\subsection{Introspecção em nível de SO}
-O modelo de programação do MPI funciona disparando processos independentes no sistema operacional. Nesta seção, verificou-se como esses processos são alocados no hardware ao executar o programa com 8 processos através do comando \verb|mpiexec -n 8 ./hello_os|. Diferente de um modelo de threads que compartilham memória, o MPI cria processos isolados, o que é confirmado na saída do terminal, pois cada rank possui um Identificador de Processo (\textit{PID}) próprio.
+O MPI dispara processos independentes e isolados no sistema operacional, cada um com seu próprio Identificador de Processo (\textit{PID}), diferindo do modelo de memória compartilhada por \textit{threads}. Executando o programa com 8 processos (\verb|mpiexec -n 8 ./hello_os|), observa-se que os PIDs são gerados sequencialmente devido à rapidez de criação consecutiva pelo processo pai. Além disso, a coluna da CPU varia de forma não determinística a cada execução; como o sistema gerencia múltiplas tarefas concorrentes, a alocação dos processos nos núcleos depende da carga instantânea e assume um comportamento aleatório.
 
 \begin{lstlisting}[language=bash, caption=Exemplo de uma execução do programa, basicstyle=\ttfamily\footnotesize]
     $ mpiexec -n 8 ./hello_os
@@ -43,12 +41,9 @@ O modelo de programação do MPI funciona disparando processos independentes no 
     Hello from rank 0/8 -- PID = 6570, CPU = 4
 \end{lstlisting}
 
-Ao realizar execuções consecutivas, notou-se que os PIDs são gerados de forma sequencial (de 6570 a 6577). Isso acontece porque o MPI cria os processos um logo após o outro rapidamente. Também observou-se que a coluna da CPU muda a cada execução e não segue a ordem dos ranks. Como a alocação é feita com base no instante em que o processo é lançado e o sistema operacional gerencia muitas tarefas ao mesmo tempo, podemos considerar a distribuição dos processos nos núcleos do processador sendo aleatória.
+Para a variante em anel, os processos comunicam-se em anel enviando saudações para a direita e recebendo da esquerda. Para evitar índices negativos inválidos utilizou-se a expressão \verb|(my_rank - 1 + comm_sz) % comm_sz|. Para impedir o travamento geral (\textit{deadlock}) típico de recepções bloqueantes síncronas, empregou-se a primitiva \verb|MPI_Sendrecv|, que coordena o envio e o recebimento de dados simultaneamente. No fim, o rank 0 centraliza a exibição coletando as mensagens via \verb|MPI_Recv|.
 
-\subsection{Variante em anel}
-Nesta variante, os processos foram organizados para se comunicar em uma estrutura de anel, onde cada rank envia sua saudação para o vizinho da direita e recebe do vizinho da esquerda. No cálculo para descobrir o vizinho da esquerda do rank 0, é feito \verb|(my_rank - 1 + comm_sz) % comm_sz|. A soma do número total de processos antes de aplicar o operador de resto (\verb|%|) serve para garantir que o resultado dentro do parêntese seja positivo, já que em C o operador de resto mantém o sinal do dividendo e retornaria um índice negativo inválido (\verb|-1|).
-
-\begin{lstlisting}[language=Bash, caption=Exemplo de execução do programa em anel, basicstyle=\ttfamily\footnotesize]
+\begin{lstlisting}[language=bash, caption=Exemplo de execução do programa em anel, basicstyle=\ttfamily\footnotesize]
     $ mpiexec -n 4 ./hello_ring
     Rank 0 received: Greetings from rank 3!
     Greetings from rank 0!
@@ -56,14 +51,9 @@ Nesta variante, os processos foram organizados para se comunicar em uma estrutur
     Greetings from rank 2!
 \end{lstlisting}
 
-Uma implementação simples onde todos os processos tentam receber uma mensagem antes de enviar causaria um \textit{deadlock}, pois todos ficariam esperando uma ação que nunca aconteceria. Para evitar esse problema, optou-se pelo uso da função \verb|MPI_Sendrecv|. Essa primitiva do MPI resolve o impasse realizando o envio e a recepção de dados ao mesmo tempo de forma coordenada. Assim, todos os processos recebem a mensagem do anel com sucesso. No fim do código, o rank 0 recebe via \verb|MPI_Recv| as mensagens que os demais processos encaminharam para centralizar a exibição dos resultados na tela.
-
 \section{Exercício 2: Regra do Trapézio Generalizada}
 
-\subsection{Balanceamento de carga para n arbitrário}
-Neste exercício, a regra do trapézio para o cálculo numérico de uma integral foi alterada para permitir a execução quando o número de trapézios ($n$) não é um múltiplo exato do número de processos ($p$). O algoritmo calcula o resto da divisão de $n$ por $p$ e distribui um trapézio adicional para os primeiros processos, ajustando o deslocamento (\textit{offset}) de cada um para evitar a omissão ou a duplicidade de trechos do intervalo de integração.
-
-A validação foi feita com a função $f(x) = \sin(x)$ no intervalo de $0$ a $\pi$, utilizando 3 processos e 10 trapézios. Nessa configuração, o resto da divisão é igual a 1, fazendo com que o processo 0 calcule 4 trapézios, enquanto os processos 1 e 2 calculem 3 trapézios cada. A execução com a entrada informada teve como resultado $\int_0^\pi f(x)dx \approx 1.98$ em um tempo de $9.50\,\mu s$.
+Para tratar cenários onde o número de trapézios ($n$) não é múltiplo de processos ($p$), o algoritmo calcula o resto $n \pmod p$ e distribui um elemento extra para os primeiros ranks, ajustando os deslocamentos (\textit{offsets}) para cobrir o intervalo sem omissões. A validação com $f(x) = \sin(x)$ no intervalo $[0, \pi]$ usando $p = 3$ e $n = 10$ resultou em 4 trapézios para o rank 0 e 3 para os demais, convergindo para a aproximação de $1.98$ em um tempo de $9.50\,\mu s$.
 
 \begin{lstlisting}[language=bash, caption={Validação com p = 3 e n = 10}, basicstyle=\ttfamily\footnotesize]
     $ echo "0 3.1415 10" | mpiexec -n 3 ./mpi_trap_generalized
@@ -71,10 +61,7 @@ A validação foi feita com a função $f(x) = \sin(x)$ no intervalo de $0$ a $\
     T_p (p=3): 9.50300e-06 seconds
 \end{lstlisting}
 
-\subsection{Estudo de escalabilidade forte}
-O estudo de escalabilidade forte foi realizado fixando o número total de trapézios em $n = 10^7$ e variando a quantidade de processos em $p \in \{1, 2, 4, 8\}$. O tempo sequencial de referência ($T_s$) foi obtido executando o próprio código paralelo com $p = 1$, incluindo os custos de inicialização e finalização do ambiente MPI. A medição foi feita com a função \verb|MPI_Wtime| ao redor do bloco de computação e da redução, coletando o maior tempo entre os processos por meio de uma chamada \verb|MPI_Reduce| com o operador \verb|MPI_MAX|.
-
-Os tempos de execução ($T_p$), os valores de speedup ($S_p = T_s / T_p$) e a eficiência ($E_p = S_p / p$) obtidos estão listados na Tabela 1.
+Fixando $n = 10^7$ trapézios para $p \in \{1, 2, 4, 8\}$, mediu-se o tempo computacional com \verb|MPI_Wtime| associado a uma redução por \verb|MPI_MAX|. O tempo sequencial de referência ($T_s$) incluiu o custo completo do ambiente MPI com $p=1$. Os tempos ($T_p$), speedup ($S_p = T_s/T_p$) e eficiência ($E_p = S_p/p$) estão na Tabela 1.
 
 \begin{table}[H]
 \centering
@@ -82,17 +69,16 @@ Os tempos de execução ($T_p$), os valores de speedup ($S_p = T_s / T_p$) e a e
 \begin{tabular}{cccc}
 \hline
 Processos ($p$) & Tempo $T_p$ ($ms$) & Speedup $S_p$ & Eficiência $E_p$ \\ \hline
-1 ($T_s$)       & 39.56              & -             & -                \\
+1 ($T_s$)       & 39.56              & 1.00          & 1.00             \\
 2               & 23.87              & 1.66          & 0.83             \\
 4               & 13.43              & 2.95          & 0.74             \\
 8               & 7.06               & 5.60          & 0.70             \\ \hline
 \end{tabular}
 \end{table}
 
-A partir dos dados coletados, observa-se que a eficiência cai abaixo de 0.8 a partir de $p = 4$ processos. Esse comportamento ocorre porque, com o aumento do número de processos trabalhando sobre o mesmo volume total de dados, o tempo gasto com a comunicação e com a sincronização passa a representar uma parcela maior do tempo total de execução. Além disso, o ganho com a divisão do trabalho computacional começa a sofrer com a disputa por recursos compartilhados, como a banda de memória do processador.
+A eficiência cai abaixo de 0.8 a partir de $p = 4$. Isso decorre do aumento proporcional do tempo gasto em sincronização e comunicações coletivas frente ao volume de computação reduzido, somado à disputa por largura de banda de memória compartilhada do hardware.
 
-\subsection{Estudo de convergência}
-Neste item, o número de processos foi fixado em $p = 4$ para avaliar o comportamento da aproximação da integral com o aumento do número de trapézios, utilizando $n \in \{64, 256, 1024, 4096, 16384\}$ e limite superior em $\pi = 3.1415$.
+\noindent\textbf{Estudo de convergência} — Fixando $p = 4$, avaliou-se a convergência variando $n \in \{64, 256, 1024, 4096, 16384\}$ com limite superior em $\pi = 3.1415$. A redução do passo $h$ minimizou o erro, atingindo precisão estável de 5 casas decimais a partir de $n = 1024$. Como a carga computacional nestas dimensões é diminuta, o tempo de execução flutua de modo não linear em função do custo das mensagens e do escalonamento do sistema operacional. O comportamento quadrático $O(h^2)$ do erro é apresentado na Figura 1.
 
 \begin{lstlisting}[language=bash, caption={Resultados de convergência com p = 4}, basicstyle=\ttfamily\footnotesize]
     With n = 64, on [0, 3.1415] = 1.999598408038247
@@ -107,18 +93,6 @@ Neste item, o número de processos foi fixado em $p = 4$ para avaliar o comporta
     T_p (p=4): 3.36630e-05 seconds
 \end{lstlisting}
 
-Com o aumento de $n$, o tamanho do espaçamento $h$ diminui, reduzindo o erro do método numérico. Os resultados mostram que a aproximação converge para o valor esperado de 2.00000 em 5 casas decimais a partir de $n = 1024$.
-
-Observa-se também que o tempo de execução medido não é estritamente crescente em relação a $n$. Como esses tamanhos de problema são muito pequenos, o custo puramente computacional é insignificante. A variação de tempo observada reflete predominantemente o atraso das mensagens de comunicação do MPI (\textit{overhead}) e as flutuações do escalonador do sistema operacional, que ofuscam o tempo de cálculo da integral.
-
-\begin{figure}[H]
-    \centering
-    \hspace{-.09\textwidth}
-    \includegraphics[width=0.7\textwidth]{imagens/mpi_trap_chart.pdf}
-    \caption{Erro de integração em função do passo h}
-    \label{fig:convergencia}
-\end{figure}
-
 \section{Exercício 3: Soma Paralela}
 O processo 0 gerou um vetor de 12000 números aleatórios e distribuiu fatias iguais para cada rank via \verb|MPI_Send|. Cada processo recebeu os dados com \verb|MPI_Recv|, calculou uma soma local e retornou o valor parcial para o processo 0 realizar o acúmulo final. A validação contra o cálculo serial apresentou um erro relativo de $3.33 \times 10^{-15}$, causado pela reordenação das adições na aritmética de ponto flutuante.
 
@@ -132,7 +106,7 @@ A implementação ponto-a-ponto utilizou cerca de 15 linhas de código para o co
 
 \section{Exercício 4: Prática de Comunicação Coletiva}
 
-No primeiro item, usamos a função \verb|MPI_Gather| para agrupar as saudações de todos os processos em um \textit{buffer} alocado no processo 0, substituindo o laço de recepções manuais. A operação coletiva organiza as de forma sequencial de acordo com o rank de origem.
+No primeiro item, foi utilizada a função \verb|MPI_Gather| para agrupar as saudações de todos os processos em um \textit{buffer} alocado no processo 0, substituindo o laço de recepções manuais. A operação coletiva organiza as mensagens de forma sequencial de acordo com o rank de origem.
 
 \begin{lstlisting}[language=bash, caption={Saída do hello\_gather}, basicstyle=\ttfamily\footnotesize]
     Greetings from process 0 of 4!
