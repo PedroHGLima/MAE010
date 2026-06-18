@@ -21,13 +21,13 @@ Pedro Henrique Grave Lima - 120019143
 \newpage
 
 \section*{Introdução}
-Este relatório apresenta o desenvolvimento e a análise de seis exercícios práticos utilizando a biblioteca MPI para programação paralela. O objetivo do trabalho é aplicar conceitos de comunicação ponto-a-ponto, algoritmos de redução, comunicações coletivas e tipos de dados derivados, avaliando o comportamento dos processos no sistema operacional e o desempenho computacional em termos de escalabilidade e convergência.
+Este relatório apresenta o desenvolvimento e a análise do trabalho 1 da disciplina de Computação de Alto Desempenho (MAE010), utilizando a biblioteca MPI para programação paralela.
 
 Neste trabalho, os códigos serão executados no ambiente WSL2 em um computador equipado com um processador \href{https://www.intel.com.br/content/www/br/pt/products/sku/236789/intel-core-i7-processor-14700kf-33m-cache-up-to-5-60-ghz/specifications.html}{Intel Core i7 14700KF}, com um total de 28 threads.
 
 \section{Exercício 1: Variantes do Hello World}
 
-O MPI dispara processos independentes e isolados no sistema operacional, cada um com seu próprio Identificador de Processo (\textit{PID}), diferindo do modelo de memória compartilhada por \textit{threads}. Executando o programa com 8 processos (\verb|mpiexec -n 8 ./hello_os|), observa-se que os PIDs são gerados sequencialmente devido à rapidez de criação consecutiva pelo processo pai. Além disso, a coluna da CPU varia de forma não determinística a cada execução; como o sistema gerencia múltiplas tarefas concorrentes, a alocação dos processos nos núcleos depende da carga instantânea e assume um comportamento aleatório.
+O MPI dispara processos independentes e isolados no sistema operacional, cada um com seu próprio Identificador de Processo (\textit{PID}), diferindo do modelo de memória compartilhada por \textit{threads}. Executando o programa com 8 processos (\verb|mpiexec -n 8 ./hello_os|), observa-se que os PIDs são gerados sequencialmente devido à rapidez de criação consecutiva pelo processo pai. Além disso, a coluna da CPU varia a cada execução. Como o sistema gerencia múltiplas tarefas concorrentes, a alocação dos processos nos núcleos depende da carga instantânea, assim assumindo um comportamento que pode ser considerado aleatório.
 
 \begin{lstlisting}[language=bash, caption=Exemplo de uma execução do programa, basicstyle=\ttfamily\footnotesize]
     $ mpiexec -n 8 ./hello_os
@@ -78,20 +78,28 @@ Processos ($p$) & Tempo $T_p$ ($ms$) & Speedup $S_p$ & Eficiência $E_p$ \\ \hli
 
 A eficiência cai abaixo de 0.8 a partir de $p = 4$. Isso decorre do aumento proporcional do tempo gasto em sincronização e comunicações coletivas frente ao volume de computação reduzido, somado à disputa por largura de banda de memória compartilhada do hardware.
 
-\noindent\textbf{Estudo de convergência} — Fixando $p = 4$, avaliou-se a convergência variando $n \in \{64, 256, 1024, 4096, 16384\}$ com limite superior em $\pi = 3.1415$. A redução do passo $h$ minimizou o erro, atingindo precisão estável de 5 casas decimais a partir de $n = 1024$. Como a carga computacional nestas dimensões é diminuta, o tempo de execução flutua de modo não linear em função do custo das mensagens e do escalonamento do sistema operacional. O comportamento quadrático $O(h^2)$ do erro é apresentado na Figura 1.
+Fixando $p = 4$, avaliou-se a convergência variando $n \in \{64, 256, 1024, 4096, 16384\}$ com limite superior em $\pi = 3.1415$. A redução do passo $h$ minimizou o erro, atingindo precisão estável de 5 casas decimais a partir de $n = 1024$. Como a carga computacional nestas dimensões é diminuta, o tempo de execução flutua de modo não linear em função do custo das mensagens e do escalonamento do sistema operacional. O comportamento quadrático $O(h^2)$ do erro é apresentado no gráfico:
 
-\begin{lstlisting}[language=bash, caption={Resultados de convergência com p = 4}, basicstyle=\ttfamily\footnotesize]
-    With n = 64, on [0, 3.1415] = 1.999598408038247
-    T_p (p=4): 1.79960e-05 seconds
-    With n = 256, on [0, 3.1415] = 1.999974897423256
-    T_p (p=4): 1.66120e-05 seconds
-    With n = 1024, on [0, 3.1415] = 1.999998427068573
-    T_p (p=4): 1.66160e-05 seconds
-    With n = 4096, on [0, 3.1415] = 1.999999897667729
-    T_p (p=4): 1.44670e-05 seconds
-    With n = 16384, on [0, 3.1415] = 1.999999989580159
-    T_p (p=4): 3.36630e-05 seconds
-\end{lstlisting}
+\begin{figure}[H]
+    \centering
+    \hspace{-.09\textwidth}
+    \includegraphics[width=0.7\textwidth]{imagens/mpi_trap_chart.pdf}
+    \caption{Erro de integração em função do passo h}
+    \label{fig:convergencia}
+\end{figure}
+
+% \begin{lstlisting}[language=bash, caption={Resultados de convergência com p = 4}, basicstyle=\ttfamily\footnotesize]
+%     With n = 64, on [0, 3.1415] = 1.999598408038247
+%     T_p (p=4): 1.79960e-05 seconds
+%     With n = 256, on [0, 3.1415] = 1.999974897423256
+%     T_p (p=4): 1.66120e-05 seconds
+%     With n = 1024, on [0, 3.1415] = 1.999998427068573
+%     T_p (p=4): 1.66160e-05 seconds
+%     With n = 4096, on [0, 3.1415] = 1.999999897667729
+%     T_p (p=4): 1.44670e-05 seconds
+%     With n = 16384, on [0, 3.1415] = 1.999999989580159
+%     T_p (p=4): 3.36630e-05 seconds
+% \end{lstlisting}
 
 \section{Exercício 3: Soma Paralela}
 O processo 0 gerou um vetor de 12000 números aleatórios e distribuiu fatias iguais para cada rank via \verb|MPI_Send|. Cada processo recebeu os dados com \verb|MPI_Recv|, calculou uma soma local e retornou o valor parcial para o processo 0 realizar o acúmulo final. A validação contra o cálculo serial apresentou um erro relativo de $3.33 \times 10^{-15}$, causado pela reordenação das adições na aritmética de ponto flutuante.
